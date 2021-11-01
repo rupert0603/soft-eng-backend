@@ -3,6 +3,9 @@ const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const Product = require("../models/productModel");
+const AddOn = require("../models/addOnModel");
+const ProductVariant = require("../models/productVariantModel");
+const cartSchema = require("./cartSchema");
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -27,6 +30,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["user", "admin"],
     default: "user",
+    // select: false,
   },
   password: {
     type: String,
@@ -45,22 +49,55 @@ const userSchema = new mongoose.Schema({
       message: "Passwords are not the same!",
     },
   },
-  cart: {
-    items: [
-      {
-        productId: {
-          type: mongoose.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        qty: {
-          type: Number,
-          required: true,
-        },
-      },
-    ],
-    totalPrice: Number,
-  },
+  cart: [
+    cartSchema,
+    // mongoose.Schema({
+    //   product: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Product",
+    //   },
+    //   addOns: [
+    //     {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "AddOn",
+    //     },
+    //   ],
+    //   variant: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "ProductVariant",
+    //   },
+    // }),
+    // {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Product",
+    // },
+  ],
+  // cart: {
+  //   products: [
+  //     {
+  //       product: {
+  //         type: mongoose.Types.ObjectId,
+  //         ref: "Product",
+  //         required: true,
+  //       },
+  //       // qty: {
+  //       //   type: Number,
+  //       //   required: true,
+  //       // },
+  //       addOns: [
+  //         {
+  //           type: mongoose.Types.ObjectId,
+  //           ref: "Product",
+  //         },
+  //       ],
+  //       size: {
+  //         type: String,
+  //         enum: ["regular", "large"],
+  //         default: "regular",
+  //       },
+  //     },
+  //   ],
+  // },
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
@@ -68,6 +105,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
     select: false,
+  },
+  bobaRewards: {
+    type: Number,
+    default: 0,
+    min: [0, "Can't be less than 0"],
   },
 });
 
@@ -122,39 +164,39 @@ userSchema.methods.createPasswordResetToken = function () {
   return resetToken;
 };
 
-userSchema.methods.addToCart = async function (productId) {
-  const product = await Product.findById(productId);
-  if (product) {
-    const cart = this.cart;
-    const isExisting = cart.items.findIndex(
-      (objInItems) =>
-        new String(objInItems.productId).trim() ===
-        new String(product._id).trim()
-    );
-    if (isExisting >= 0) {
-      cart.items[isExisting].qty += 1;
-    } else {
-      cart.items.push({ productId: product._id, qty: 1 });
-    }
-    if (!cart.totalPrice) {
-      cart.totalPrice = 0;
-    }
-    cart.totalPrice += product.price;
-    return this.save();
-  }
-};
+// userSchema.methods.addToCart = async function (productId) {
+//   const product = await Product.findById(productId);
+//   if (product) {
+//     const cart = this.cart;
+//     const isExisting = cart.items.findIndex(
+//       (objInItems) =>
+//         new String(objInItems.productId).trim() ===
+//         new String(product._id).trim()
+//     );
+//     if (isExisting >= 0) {
+//       cart.items[isExisting].qty += 1;
+//     } else {
+//       cart.items.push({ productId: product._id, qty: 1 });
+//     }
+//     if (!cart.totalPrice) {
+//       cart.totalPrice = 0;
+//     }
+//     cart.totalPrice += product.price;
+//     return this.save();
+//   }
+// };
 
-userSchema.methods.removeFromCart = function (productId) {
-  const cart = this.cart;
-  const isExisting = cart.items.findIndex(
-    (objInItems) =>
-      new String(objInItems.productId).trim() === new String(productId).trim()
-  );
-  if (isExisting >= 0) {
-    cart.items.splice(isExisting, 1);
-    return this.save();
-  }
-};
+// userSchema.methods.removeFromCart = function (productId) {
+//   const cart = this.cart;
+//   const isExisting = cart.items.findIndex(
+//     (objInItems) =>
+//       new String(objInItems.productId).trim() === new String(productId).trim()
+//   );
+//   if (isExisting >= 0) {
+//     cart.items.splice(isExisting, 1);
+//     return this.save();
+//   }
+// };
 
 const User = mongoose.model("User", userSchema);
 

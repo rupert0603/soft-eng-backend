@@ -37,7 +37,12 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
-    name: req.body.name,
+    // name: req.body.name,
+    //
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    middleName: req.body.middleName,
+    //
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
@@ -105,6 +110,32 @@ exports.protect = catchAsync(async (req, res, next) => {
   //put the entire user data on the request
   req.user = freshUser; //might be useful for some point in the future
   next();
+});
+
+exports.extractToken = async (token) => {
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  return decoded;
+};
+
+exports.validateAuthorization = catchAsync(async (req, res, next) => {
+  const user = req.user;
+
+  const roleAccess = {
+    user: ["private"],
+    admin: ["private", "admin"],
+  };
+
+  if (roleAccess[user.role].includes(req.body.type)) {
+    res.status(200).json({
+      status: "success",
+      data: {
+        user,
+      },
+    });
+  } else {
+    return next(new AppError("You are unauthorized to access this route", 401));
+  }
 });
 
 exports.restrictTo = (...roles) => {
