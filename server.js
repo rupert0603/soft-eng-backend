@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+require("dotenv").config();
 
 process.on("uncaughtException", (err) => {
   console.log(err);
@@ -33,7 +34,7 @@ mongoose
   })
   .then(() => console.log("DB connection successful!"));
 
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 5000;
 
 const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
